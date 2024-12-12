@@ -1,17 +1,13 @@
-#!/usr/bin/node
+import { Router } from 'express';
+import appRouter from './app';
+import authRouter from './auth';
+import usersRouter from './users';
+import filesRouter from './files';
 
-const express = require('express');
-const AppController = require('../controllers/AppController');
-const UsersController = require('../controllers/UsersController');
-const AuthController = require('../controllers/AuthController');
+const router = Router();
+router.use(appRouter);
+router.use(authRouter);
+router.use(usersRouter);
+router.use(filesRouter);
 
-const router = express.Router();
-
-router.get('/status', AppController.getStatus);
-router.get('/stats', AppController.getStats);
-router.post('/users', UsersController.postNew);
-router.get('/connect', AuthController.getConnect);
-router.get('/disconnect', AuthController.getDisconnect);
-router.get('/users/me', AuthController.getMe);
-
-module.exports = router;
+export default router;
