@@ -1,12 +1,25 @@
-#!/usr/bin/node
+import express from 'express';
+import router from './routes/index';
+import unmatchedRouteHandler from './middleware/unmatched';
+import errorHandler from './middleware/error';
+import shutdown from './utils/shutdown';
 
-const express = require('express');
-const router = require('./routes/index');
+const app = express();
+const PORT = process.env.PORT || 5000;
 
-const server = express();
-const PORT = process.env.PORT ? process.env.PORT : 5000;
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(router);
+app.use(unmatchedRouteHandler);
+app.use(errorHandler);
 
-server.use(express.json());
-server.use(router);
+const server = app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
 
-server.listen(PORT, () => console.log(`The server is running on port: ${PORT}`));
+const handler = () => shutdown(server);
+process.on('SIGINT', handler);
+process.on('SIGTERM', handler);
+process.on('SIGQUIT', handler);
+
+export default app;
