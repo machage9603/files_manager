@@ -1,31 +1,23 @@
-#!/usr/bin/node
+import Queue from 'bull';
+import UsersCollection from '../utils/users';
 
-const dbClient = require('../utils/db');
+const userQueue = Queue('send welcome email');
 
 class UsersController {
   static async postNew(req, res) {
     const { email, password } = req.body;
-    if (!email) {
+    if (email === undefined) {
       res.status(400).json({ error: 'Missing email' });
-      res.end();
-      return;
-    }
-    if (!password) {
+    } else if (password === undefined) {
       res.status(400).json({ error: 'Missing password' });
-      res.end();
-      return;
-    }
-    const userExist = await dbClient.userExist(email);
-    if (userExist) {
+    } else if (await UsersCollection.getUser({ email })) {
       res.status(400).json({ error: 'Already exist' });
-      res.end();
-      return;
+    } else {
+      const userId = await UsersCollection.createUser(email, password);
+      userQueue.add({ userId });
+      res.status(201).json({ id: userId, email });
     }
-    const user = await dbClient.createUser(email, password);
-    const id = `${user.insertedId}`;
-    res.status(201).json({ id, email });
-    res.end();
   }
 }
 
-module.exports = UsersController;
+export default UsersController;
