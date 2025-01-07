@@ -1,70 +1,159 @@
-#
+# ALX Files Manager
 
-# File Management Platform
-
-## Introduction
-
-This project builds a simple platform for uploading and viewing files, covering various backend concepts such as:
-
-- User authentication
-- Node.js and Express
-- MongoDB for data storage
-- Redis for temporary data
-- Background processing with Bull
-- Image thumbnail generation
+A robust backend API for a file management system built with Node.js. This project implements user authentication, file upload/download functionality, permissions management, and image thumbnail generation.
 
 ## Features
 
-- User authentication via JWT
-- File listing and uploading
-- File permission management
-- File viewing
-- Thumbnail generation for images
+- **User Authentication**
 
-## Learning Objectives
+  - Basic authentication (Base64)
+  - Token-based access
+  - Session management with Redis
 
-Upon completion, you will be able to:
+- **File Operations**
 
-- Develop APIs using Express
-- Implement user authentication
-- Utilize MongoDB for data management
-- Leverage Redis for caching
-- Integrate background processing
-- Generate image thumbnails
+  - Upload files (regular files & images)
+  - Create folders
+  - List files & folders
+  - Get file data
+  - Set file permissions (public/private)
+  - File parent/child relationships
 
-## Prerequisites
+- **Image Processing**
 
-- Node.js (v12.x.x)
-- A preferred text editor or IDE
-- npm
+  - Automatic thumbnail generation
+  - Multiple thumbnail sizes (100px, 250px, 500px)
+  - Background processing with Bull
 
-## Getting Started
+- **Database Management**
+  - MongoDB for data persistence
+  - Redis for caching & session management
+  - Pagination support
 
-1. Clone the repository
-2. Run `npm install`
-3. Follow the provided steps to build the platform
+## Technology Stack
 
-## Resources
+- **Backend**: Node.js with Express
+- **Databases**:
+  - MongoDB (file/user data storage)
+  - Redis (caching, session management)
+- **Image Processing**: image-thumbnail
+- **Queue System**: Bull
+- **Testing**: Mocha
+- **Development**: ESLint, Nodemon
 
-- Node.js Getting Started
-- Express Getting Started
-- MongoDB
-- Bull
-- Image Thumbnail
+## Installation
 
-## Requirements
+1. Clone the repository:
 
-- All files must end with a new line
-- Use the '.js' file extension
-- Adhere to ESLint rules
-- Include a `README.md` file
+```bash
+git clone https://github.com/your-username/alx-files_manager.git
+cd alx-files_manager
+```
 
-## Provided Files
+2. Install dependencies:
 
-- `package.json`
-- `.eslintrc.js`
-- `babel.config.js`
+```bash
+npm install
+```
+
+3. Set up environment variables:
+
+```bash
+# Create .env file
+cp .env.example .env
+
+# Configure these variables
+DB_HOST=localhost
+DB_PORT=27017
+DB_DATABASE=files_manager
+FOLDER_PATH=/tmp/files_manager
+```
+
+4. Start the servers:
+
+```bash
+# Start the API server
+npm run start-server
+
+# Start the worker (in a separate terminal)
+npm run start-worker
+```
+
+## API Endpoints
+
+### Authentication
+
+- `GET /connect` - Sign-in with Basic Auth
+- `GET /disconnect` - Sign-out based on token
+- `GET /users/me` - Get user info based on token
+
+### User Management
+
+- `POST /users` - Create a new user
+- `GET /status` - Get API status
+- `GET /stats` - Get file & user stats
+
+### File Operations
+
+- `POST /files` - Upload a new file/create folder
+- `GET /files/:id` - Get file by ID
+- `GET /files` - List all files (with pagination)
+- `PUT /files/:id/publish` - Make file public
+- `PUT /files/:id/unpublish` - Make file private
+- `GET /files/:id/data` - Get file data (supports thumbnail sizes)
+
+## Testing
+
+Run the test suite:
+
+```bash
+npm test
+```
+
+Tests cover:
+
+- Redis client functionality
+- Database client functionality
+- API endpoints
+- Worker processes
+
+## Project Structure
+
+```
+alx-files_manager/
+├── controllers/
+│   ├── AppController.js
+│   ├── AuthController.js
+│   ├── FilesController.js
+│   └── UsersController.js
+├── routes/
+│   └── index.js
+├── utils/
+│   ├── db.js
+│   └── redis.js
+├── worker.js
+├── server.js
+└── tests/
+```
 
 ## Contributing
 
-Contributions are welcome. Please read the [contributing guidelines](CONTRIBUTING.md) before submitting a pull request.
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/awesome-feature`)
+3. Commit your changes (`git commit -m 'Add awesome feature'`)
+4. Push to the branch (`git push origin feature/awesome-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Authors
+
+- Original Author: [https://x.com/SerMachage]
+
+## Acknowledgments
+
+- ALX & Holberton School for the project requirements and support
+- Node.js community for excellent documentation
+- All contributors and testers
