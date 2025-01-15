@@ -2,7 +2,7 @@
 
 const { MongoClient } = require('mongodb');
 const mongo = require('mongodb');
-const { pwdHashed } = require('./utils');
+const { pwdHashed } = require('util');
 
 class DBClient {
   constructor() {
