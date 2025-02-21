@@ -1,4 +1,4 @@
-# ALX Files Manager
+# Files Manager
 
 A robust backend API for a file management system built with Node.js. This project implements user authentication, file upload/download functionality, permissions management, and image thumbnail generation.
 
