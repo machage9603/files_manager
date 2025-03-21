@@ -46,8 +46,8 @@ A robust backend API for a file management system built with Node.js. This proje
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/your-username/alx-files_manager.git
-cd alx-files_manager
+git clone https://github.com/your-username/files_manager.git
+cd files_manager
 ```
 
 2. Install dependencies:
