@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "../components/ui/label"
 import { Loader2 } from "lucide-react"
 
-export default function LoginPage() {
+export default function SignupPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -24,31 +24,32 @@ export default function LoginPage() {
     const formData = new FormData(e.currentTarget)
     const email = formData.get("email") as string
     const password = formData.get("password") as string
+    const confirmPassword = formData.get("confirmPassword") as string
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match")
+      setIsLoading(false)
+      return
+    }
 
     try {
-      // Create Basic Auth token
-      const credentials = btoa(`${email}:${password}`)
-
-      const response = await fetch("/api/auth/connect", {
-        method: "GET",
+      const response = await fetch("/api/auth/users", {
+        method: "POST",
         headers: {
-          Authorization: `Basic ${credentials}`,
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify({ email, password }),
       })
 
       if (!response.ok) {
-        throw new Error("Invalid credentials")
+        const data = await response.json()
+        throw new Error(data.error || "Failed to create account")
       }
 
-      const data = await response.json()
-
-      // Store token in localStorage
-      localStorage.setItem("token", data.token)
-
-      // Redirect to dashboard
-      router.push("/dashboard")
+      // Redirect to login page after successful signup
+      router.push("/login?registered=true")
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed")
+      setError(err instanceof Error ? err.message : "Signup failed")
     } finally {
       setIsLoading(false)
     }
@@ -58,8 +59,8 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
-          <CardDescription>Enter your credentials to access your files</CardDescription>
+          <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
+          <CardDescription>Enter your details to create your account</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
@@ -69,13 +70,12 @@ export default function LoginPage() {
               <Input id="email" name="email" type="email" required />
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link href="/forgot-password" className="text-sm text-primary hover:underline">
-                  Forgot password?
-                </Link>
-              </div>
+              <Label htmlFor="password">Password</Label>
               <Input id="password" name="password" type="password" required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Input id="confirmPassword" name="confirmPassword" type="password" required />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
@@ -83,16 +83,16 @@ export default function LoginPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
+                  Creating account...
                 </>
               ) : (
-                "Sign in"
+                "Create account"
               )}
             </Button>
             <div className="text-center text-sm">
-              Don&apos;t have an account?{" "}
-              <Link href="/signup" className="text-primary hover:underline">
-                Sign up
+              Already have an account?{" "}
+              <Link href="/login" className="text-primary hover:underline">
+                Sign in
               </Link>
             </div>
           </CardFooter>

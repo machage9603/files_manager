@@ -1,16 +1,8 @@
-"use client";
-
-import { useContext } from 'react';
-import FileList from './components/FileList';
-import { TokenContext } from './components/AppProvider';
+import { redirect } from "next/navigation"
 
 export default function Home() {
-  const { token } = useContext(TokenContext);
+  // Redirect to login page if not authenticated, or to dashboard if authenticated
+  redirect("/login")
 
-  return (
-    <div>
-      <h1>Files Manager</h1>
-      <FileList token={token} />
-    </div>
-  );
+  return null
 }
