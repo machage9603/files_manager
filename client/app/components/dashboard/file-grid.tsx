@@ -2,16 +2,16 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import type { FileType } from "@/types/file"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import type { FileType } from "../../types/files"
+import { Card, CardContent, CardFooter } from "../ui/card"
+import { Button } from "../ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "../ui/dropdown-menu"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,7 +21,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+} from "../ui/alert-dialog"
 import {
   Download,
   Eye,
@@ -37,7 +37,7 @@ import {
   FileVideo,
   File,
 } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "../../hooks/use-toast"
 
 interface FileGridProps {
   files: FileType[]

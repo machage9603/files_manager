@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useRef } from "react"
-import { Button } from "@/components/ui/button"
+import { Button } from "../../components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -11,10 +11,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Progress } from "@/components/ui/progress"
+} from "../../components/ui/dialog"
+import { Progress } from "../../components/ui/progress"
 import { Upload, X, FileUp } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "../../hooks/use-toast"
 
 interface UploadButtonProps {
   currentFolder: string | null

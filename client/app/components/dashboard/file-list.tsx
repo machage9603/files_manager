@@ -1,16 +1,16 @@
 "use client"
 
 import { useState } from "react"
-import type { FileType } from "@/types/file"
-import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import type { FileType } from "../../types/files"
+import { Button } from "../../components/ui/button"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "../../components/ui/dropdown-menu"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +20,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+} from "../../components/ui/alert-dialog"
 import {
   Download,
   Eye,
@@ -36,7 +36,7 @@ import {
   FileVideo,
   File,
 } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "../../hooks/use-toast"
 import { formatDistanceToNow } from "date-fns"
 
 interface FileListProps {
@@ -85,6 +85,7 @@ export function FileList({ files, onFolderClick, onRefresh }: FileListProps) {
       const date = new Date(dateString)
       return formatDistanceToNow(date, { addSuffix: true })
     } catch (error) {
+      console.error("Error parsing date:", error);
       return "Unknown date"
     }
   }

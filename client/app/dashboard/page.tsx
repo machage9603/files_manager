@@ -2,7 +2,7 @@
 
 import React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { FileGrid } from "../components/dashboard/file-grid"
 import { FileList } from "../components/dashboard/file-list"
 import { UploadButton } from "../components/dashboard/upload-button"
@@ -15,10 +15,10 @@ import {
   BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+} from "../components/ui/breadcrumb"
 import { Grid, List, Loader2, FolderPlus } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
-import type { FileType } from "@/types/file"
+import { useToast } from "../hooks/use-toast"
+import type { FileType } from "../types/files"
 
 export default function DashboardPage() {
   const { toast } = useToast()
@@ -31,7 +31,7 @@ export default function DashboardPage() {
   const [isCreatingFolder, setIsCreatingFolder] = useState(false)
   const [newFolderName, setNewFolderName] = useState("")
 
-  const fetchFiles = async (parentId: string | null = null) => {
+  const fetchFiles = useCallback(async (parentId: string | null = null) => {
     setIsLoading(true)
     try {
       const token = localStorage.getItem("token")
@@ -63,9 +63,9 @@ export default function DashboardPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [toast])
 
-  const fetchFolderPath = async (folderId: string) => {
+  const fetchFolderPath = async (folderId: string): Promise<{ id: string; name: string }[]> => {
     try {
       const token = localStorage.getItem("token")
       const response = await fetch(`/api/files/${folderId}`, {
@@ -159,7 +159,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchFiles(currentFolder)
-  }, [currentFolder])
+  }, [currentFolder, fetchFiles])
 
   return (
     <div className="space-y-4">

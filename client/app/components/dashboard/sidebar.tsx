@@ -1,17 +1,18 @@
 "use client"
 
 import type React from "react"
+import { LucideIcon } from "lucide-react"
 
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Button } from "../../components/ui/button"
+import { ScrollArea } from "../../components/ui/scroll-area"
+import { Sheet, SheetContent, SheetTrigger } from "../../components/ui/sheet"
 import { cn } from "@/lib/utils"
 import { FileText, FolderOpen, ImageIcon, Menu, Star, Trash, Upload, User, Settings, LogOut } from "lucide-react"
 
-interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
+type SidebarProps = React.HTMLAttributes<HTMLDivElement>
 
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname()
@@ -136,13 +137,19 @@ export function Sidebar({ className }: SidebarProps) {
     </>
   )
 }
+interface RouteItem {
+  label: string;
+  icon: LucideIcon;
+  href: string;
+  active: boolean;
+}
 
 function MobileSidebar({
   routes,
   onLogout,
 }: {
-  routes: { label: string; icon: any; href: string; active: boolean }[]
-  onLogout: () => void
+  routes: RouteItem[];
+  onLogout: () => void;
 }) {
   return (
     <div className="flex h-full flex-col">
