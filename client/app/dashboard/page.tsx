@@ -1,8 +1,6 @@
 "use client"
 
-import React from "react"
-
-import { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { FileGrid } from "../components/dashboard/file-grid"
 import { FileList } from "../components/dashboard/file-list"
 import { UploadButton } from "../components/dashboard/upload-button"
@@ -18,10 +16,14 @@ import {
 } from "../components/ui/breadcrumb"
 import { Grid, List, Loader2, FolderPlus } from "lucide-react"
 import { useToast } from "../hooks/use-toast"
+import { User } from "firebase/auth"
+import { signInWithGoogle, signOutUser, subscribeToAuthStateChanges, uploadFile, db, collection, addDoc, query, where, getDocs, doc, getDoc } from "@/lib/firebase/clientApp"
 import type { FileType } from "../types/files"
+import { Timestamp } from "firebase/firestore"
 
 export default function DashboardPage() {
   const { toast } = useToast()
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [files, setFiles] = useState<FileType[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
@@ -30,31 +32,39 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [isCreatingFolder, setIsCreatingFolder] = useState(false)
   const [newFolderName, setNewFolderName] = useState("")
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null)
+
+  useEffect(() => {
+    const unsubscribe = subscribeToAuthStateChanges((user) => {
+      setCurrentUser(user)
+      setIsLoading(false)
+    })
+    return () => unsubscribe()
+  }, [])
 
   const fetchFiles = useCallback(async (parentId: string | null = null) => {
+    if (!currentUser) return
     setIsLoading(true)
     try {
-      const token = localStorage.getItem("token")
-      const queryParams = new URLSearchParams()
-
-      if (parentId) {
-        queryParams.append("parentId", parentId)
-      }
-
-      const response = await fetch(`/api/files?${queryParams.toString()}`, {
-        headers: {
-          "X-Token": token || "",
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch files")
-      }
-
-      const data = await response.json()
-      setFiles(data.files || [])
-    } catch (error) {
-      console.error("Error fetching files:", error)
+      const filesQuery = query(
+        collection(db, "files"),
+        where("userId", "==", currentUser.uid),
+        where("parentId", "==", parentId)
+      )
+      const querySnapshot = await getDocs(filesQuery)
+      const filesData: FileType[] = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        userId: doc.data().userId,
+        name: doc.data().name,
+        type: doc.data().type,
+        parentId: doc.data().parentId,
+        storagePath: doc.data().storagePath,
+        isPublic: doc.data().isPublic,
+        createdAt: doc.data().createdAt.toDate().toISOString(),
+      }))
+      setFiles(filesData)
+    } catch {
+      console.error("Error fetching files")
       toast({
         title: "Error",
         description: "Failed to load files. Please try again.",
@@ -63,46 +73,35 @@ export default function DashboardPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [toast])
+  }, [currentUser, toast])
 
   const fetchFolderPath = async (folderId: string): Promise<{ id: string; name: string }[]> => {
     try {
-      const token = localStorage.getItem("token")
-      const response = await fetch(`/api/files/${folderId}`, {
-        headers: {
-          "X-Token": token || "",
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch folder details")
+      const folderDoc = await getDoc(doc(db, "files", folderId))
+      if (!folderDoc.exists()) {
+        return []
       }
-
-      const folder = await response.json()
-
-      // If this folder has a parent, recursively fetch the parent path
-      if (folder.parentId) {
-        const parentPath = await fetchFolderPath(folder.parentId)
-        return [...parentPath, { id: folder.id, name: folder.name }]
+      const folderData = folderDoc.data()
+      const currentFolder = { id: folderDoc.id, name: folderData.name }
+      if (folderData.parentId) {
+        const parentPath = await fetchFolderPath(folderData.parentId)
+        return [...parentPath, currentFolder]
       }
-
-      return [{ id: folder.id, name: folder.name }]
-    } catch (error) {
-      console.error("Error fetching folder path:", error)
+      return [currentFolder]
+    } catch {
+      console.error("Error fetching folder path")
       return []
     }
   }
 
   const navigateToFolder = async (folderId: string | null) => {
     setCurrentFolder(folderId)
-
     if (folderId) {
       const path = await fetchFolderPath(folderId)
       setParentFolders(path)
     } else {
       setParentFolders([])
     }
-
     fetchFiles(folderId)
   }
 
@@ -115,36 +114,32 @@ export default function DashboardPage() {
       })
       return
     }
+    if (!currentUser) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to create a folder",
+        variant: "destructive",
+      })
+      return
+    }
 
     setIsCreatingFolder(true)
     try {
-      const token = localStorage.getItem("token")
-      const response = await fetch("/api/files", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Token": token || "",
-        },
-        body: JSON.stringify({
-          name: newFolderName,
-          type: "folder",
-          parentId: currentFolder,
-        }),
+      await addDoc(collection(db, "files"), {
+        name: newFolderName,
+        type: "folder",
+        parentId: currentFolder,
+        userId: currentUser.uid,
+        createdAt: Timestamp.now(),
       })
-
-      if (!response.ok) {
-        throw new Error("Failed to create folder")
-      }
-
       toast({
         title: "Success",
         description: "Folder created successfully",
       })
-
       setNewFolderName("")
       fetchFiles(currentFolder)
-    } catch (error) {
-      console.error("Error creating folder:", error)
+    } catch {
+      console.error("Error creating folder")
       toast({
         title: "Error",
         description: "Failed to create folder. Please try again.",
@@ -155,11 +150,92 @@ export default function DashboardPage() {
     }
   }
 
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithGoogle()
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to sign in.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleSignOut = async () => {
+    try {
+      await signOutUser()
+      setFiles([])
+      setCurrentFolder(null)
+      setParentFolders([])
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to sign out.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleFileUpload = async (file: File) => {
+    if (!currentUser) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to upload files",
+        variant: "destructive",
+      })
+      return
+    }
+    setUploadStatus("Uploading...")
+    try {
+      const storagePath = `${currentUser.uid}/${currentFolder || "documents"}/${file.name}`
+      await uploadFile(file, currentUser.uid, currentFolder || "documents")
+      await addDoc(collection(db, "files"), {
+        name: file.name,
+        type: "file",
+        parentId: currentFolder,
+        userId: currentUser.uid,
+        storagePath,
+        createdAt: Timestamp.now(),
+      })
+      setUploadStatus("Upload successful!")
+      toast({
+        title: "Success",
+        description: "File uploaded successfully",
+      })
+      fetchFiles(currentFolder)
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setUploadStatus(`Upload failed: ${error.message}`)
+      } else {
+      setUploadStatus(`Upload failed: Unknown error`)
+      }
+      toast({
+        title: "Error",
+        description: "Failed to upload file. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
   const filteredFiles = files.filter((file) => file.name.toLowerCase().includes(searchQuery.toLowerCase()))
 
   useEffect(() => {
-    fetchFiles(currentFolder)
-  }, [currentFolder, fetchFiles])
+    if (currentUser) {
+      fetchFiles(currentFolder)
+    }
+  }, [currentFolder, currentUser, fetchFiles])
+
+  if (!currentUser) {
+    return (
+      <div className="flex h-[400px] flex-col items-center justify-center">
+        <p className="text-lg">Please sign in to access your files.</p>
+        <Button onClick={handleGoogleSignIn} className="mt-4">
+          Sign In with Google
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">
@@ -173,7 +249,6 @@ export default function DashboardPage() {
                   Home
                 </BreadcrumbLink>
               </BreadcrumbItem>
-
               {parentFolders.map((folder, index) => (
                 <React.Fragment key={folder.id}>
                   <BreadcrumbSeparator />
@@ -221,7 +296,11 @@ export default function DashboardPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full sm:w-[200px] md:w-[300px]"
             />
-            <UploadButton currentFolder={currentFolder} onUploadComplete={() => fetchFiles(currentFolder)} />
+            <UploadButton
+              currentFolder={currentFolder}
+              onUploadComplete={(file) => handleFileUpload(file)}
+            />
+            <Button onClick={handleSignOut}>Sign Out</Button>
           </div>
         </div>
       </div>
@@ -257,6 +336,8 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {uploadStatus && <p className="text-sm">{uploadStatus}</p>}
 
       {isLoading ? (
         <div className="flex h-[400px] items-center justify-center">

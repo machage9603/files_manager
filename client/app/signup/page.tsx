@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -10,6 +9,9 @@ import { Input } from "../components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card"
 import { Label } from "../components/ui/label"
 import { Loader2 } from "lucide-react"
+import { auth } from "@/lib/firebase/clientApp";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+
 
 export default function SignupPage() {
   const router = useRouter()
@@ -26,35 +28,62 @@ export default function SignupPage() {
     const password = formData.get("password") as string
     const confirmPassword = formData.get("confirmPassword") as string
 
+    // Keep client-side password confirmation check
     if (password !== confirmPassword) {
       setError("Passwords do not match")
       setIsLoading(false)
       return
     }
 
+    // --- Firebase Auth Signup Logic ---
     try {
-      const response = await fetch("/api/auth/users", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      })
+      // Call the Firebase Auth function to create a new user with email and password.
+      // This function securely communicates with the Firebase backend.
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || "Failed to create account")
+      // On successful creation, Firebase automatically signs the user in.
+      const user = userCredential.user;
+      console.log("Successfully signed up user:", user);
+
+      // Instead of fetching your custom API, handle the success directly.
+      // The original code redirects to /login, which is fine,
+      // but note that the user is already logged in according to Firebase Auth state.
+      router.push("/login?registered=true"); // Redirect after successful signup
+
+    } catch (firebaseError: any) {
+      // Catch errors specifically from Firebase Auth.
+      // Firebase provides error codes and messages you can use.
+      console.error("Firebase signup error:", firebaseError);
+
+      // Provide user-friendly error messages based on Firebase error codes
+      let errorMessageToShow = "An unexpected error occurred during signup.";
+
+      switch (firebaseError.code) {
+        case 'auth/email-already-in-use':
+          errorMessageToShow = 'This email address is already in use.';
+          break;
+        case 'auth/invalid-email':
+          errorMessageToShow = 'The email address is invalid.';
+          break;
+        case 'auth/operation-not-allowed':
+            errorMessageToShow = 'Email/password sign-in is not enabled. Please check Firebase Console.';
+            break;
+        case 'auth/weak-password':
+          errorMessageToShow = 'The password is too weak.';
+          break;
+        default:
+          errorMessageToShow = firebaseError.message || 'Signup failed. Please try again.'; // Fallback to Firebase message
+          break;
       }
 
-      // Redirect to login page after successful signup
-      router.push("/login?registered=true")
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Signup failed")
+      setError(errorMessageToShow); // Set the error state with a user-friendly message
     } finally {
-      setIsLoading(false)
+      setIsLoading(false); // End loading state regardless of success or failure
     }
+    // --- End Firebase Auth Signup Logic ---
   }
 
+  // Rest of your JSX remains the same for rendering the form
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
       <Card className="w-full max-w-md">
